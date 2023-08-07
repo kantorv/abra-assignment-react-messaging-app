@@ -2,24 +2,58 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 
+import { useAuthContext } from "./service/auth/useAuthContext";
+import {  createBrowserRouter, RouterProvider } from "react-router-dom";
+import { useActor } from '@xstate/react';
+import SignInSide from './widgets/login/Main'
+import { NoMatch } from './pages/NoMatch'
+import  { InboxLayout, MessagesList } from './widgets/inbox'
+
+
+const anonimous_routes = createBrowserRouter([
+  {
+    path: "/",
+    element: <SignInSide />,
+  },
+]);
+
+
+
+const authentificated_routes = createBrowserRouter([
+  {
+    path: "/",
+    element: <InboxLayout />,
+    children: [
+      { index: true, element: <MessagesList /> },
+      { path: "sent", element: <MessagesList /> },
+      { path: "*", element: <NoMatch /> },
+    ],
+  },
+]);
+
+
+
+
 function App() {
+
+  const {authService} = useAuthContext()
+  const [state] = useActor(authService);
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+
+    state.matches('anonimous')?
+    ( 
+      <RouterProvider router={anonimous_routes} /> 
+    )
+    :
+    state.matches('authenticated')?
+    (
+      <RouterProvider router={authentificated_routes} /> 
+    )
+   :<>Loading</>
+
+
   );
 }
 
