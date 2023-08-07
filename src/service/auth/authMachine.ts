@@ -5,6 +5,7 @@ type LoginStateType = | "anonimous" | "authenticated" | "loading"
 
 type MachineContext  = { 
     token: string|undefined,
+    refreshToken: string|undefined,
     refreshTokenInterval:number,
     loginState: LoginStateType
 
@@ -37,10 +38,11 @@ export const authMachine = createMachine<
   MachineState
 >({
     predictableActionArguments: true,
-    initial: "authenticated",
+    initial: "anonimous",
     id:"authmachine",
     context: {
       token : undefined,
+      refreshToken : undefined,
       refreshTokenInterval: 60000 * 25, // refresh token expiration  - 30min
       loginState: "loading"
     },
