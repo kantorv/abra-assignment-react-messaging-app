@@ -16,7 +16,14 @@ type MachineContext  = {
  
 type MachineState =
   | { value: "loading"; context:MachineContext }
+  | { value: "loading.get_api_config"; context:MachineContext }
+  | { value: "loading.verify_token"; context:MachineContext }
+
   | { value: "anonimous"; context:MachineContext }
+  | { value: "anonimous.idle"; context:MachineContext }
+  | { value: "anonimous.login"; context:MachineContext }
+  | { value: "anonimous.error"; context:MachineContext }
+
   | { value: "authenticated"; context:MachineContext }
   
  
@@ -24,6 +31,10 @@ type MachineState =
 
 type MachineEvent =
 | {
+  type: 'EVENTS.USER.AUTHENTICATE',
+  username: string,
+  password: string
+} | {
   type: 'EVENTS.TOKEN.REFRESH',
 } | {
     type: 'EVENTS.APP.START',
@@ -66,19 +77,12 @@ const postApiRequest = (token:string,endpoint:string,payload:object)=>new Promis
 
 
 const refreshTokenAsync = (_:MachineContext) =>new Promise(async (resolve, reject)=> {
-
   const {apiEndpoints,refreshToken} = _
-  
-
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
-
-
-
   const payload = {
       "refresh" : refreshToken
   }
-
 
   const response = await fetch(apiEndpoints.tokenRefresh,{
     method:"POST", 
@@ -87,12 +91,8 @@ const refreshTokenAsync = (_:MachineContext) =>new Promise(async (resolve, rejec
   });
 
   if(!response.ok) reject(false)
-
-  
   const data = await response.json();
   resolve(data)
-
-
 })
 
 
@@ -103,37 +103,61 @@ const verifyTokenAsync = (_:MachineContext) =>new Promise(async (resolve, reject
     reject({reason: "not_exists"})
     return
   }
-  
-  
 
   const headers = new Headers();
   headers.append("Content-Type", "application/json");
-
-
-
   const payload = {
       "token" : token
   }
-
-
   const response = await fetch(apiEndpoints.tokenVerify,{
     method:"POST", 
     headers: headers,
     body: JSON.stringify(payload)
   });
-
-
   const data = await response.json();
-
-  if(!response.ok) reject({reason: "verify_failed", data: data})
-
+  if(!response.ok) {
+    reject({reason: "verify_failed", data: data})
+  }
+  else{
+    resolve(data)
+  }
   
-  
-  resolve(data)
-
-
 })
 
+
+
+
+const userLoginRequest = (_:MachineContext, e:MachineEvent) =>new Promise(async (resolve, reject)=> {
+  if (e.type !== 'EVENTS.USER.AUTHENTICATE') {
+    reject(false);
+    return
+  }
+
+  const {apiEndpoints } = _
+  const {username, password} = e
+
+ 
+
+  const headers = new Headers();
+  headers.append("Content-Type", "application/json");
+  const payload = {
+      "username" : username,
+      "password": password,
+  }
+
+  const response = await fetch(apiEndpoints.token,{
+    method:"POST", 
+    headers: headers,
+    body: JSON.stringify(payload)
+  });
+  const data = await response.json();
+
+  if(!response.ok) {
+    reject({reason: "login_failed", data: data})
+    return
+  }
+  resolve(data)
+})
 
 
 
@@ -219,8 +243,52 @@ export const authMachine = createMachine<
 
       anonimous:{
         id:"anonimous",
-        entry: (_,e)=>console.log("authmachine.anonimous.idle entry", e),
-        exit: (_,e)=>console.log("authmachine.anonimous.idle exit", e),
+        entry: (_,e)=>console.log("authmachine.anonimous entry", e),
+        exit: (_,e)=>console.log("authmachine.anonimous exit", e),
+        initial:"idle",
+
+        states:{
+          idle:{
+            entry: (_,e)=>console.log("authmachine.anonimous.idle entry", e),
+            exit: (_,e)=>console.log("authmachine.anonimous.idle exit", e),
+          },
+          login:{
+            id: "login",
+            entry: (_,e)=>console.log("authmachine.anonimous.login entry", e),
+            exit: (_,e)=>console.log("authmachine.anonimous.login exit", e),
+            invoke:{
+              src:(_,e)=>userLoginRequest(_,e),
+              onDone:{
+                actions:[
+                  (_,e)=>console.log("authmachine.anonimous.login.userLoginRequest onDone", e),
+                  assign((_,e)=>({
+                    token:e.data.access,
+                    refreshToken: e.data.refresh
+                  }))
+
+                ],
+                target:"#authenticated"
+              },
+              onError:{
+                actions:[
+                  (_,e)=>console.log("authmachine.anonimous.login.userLoginRequest onError", e),
+                ],
+                target:"error"
+              }
+            }
+          },
+          error:{
+            entry: (_,e)=>console.log("authmachine.anonimous.error entry", e),
+            exit: (_,e)=>console.log("authmachine.anonimous.error exit", e),
+
+          }
+        },
+
+        on:{
+          'EVENTS.USER.AUTHENTICATE':{
+            target: "#login"
+          }
+        }
 
       },
 
