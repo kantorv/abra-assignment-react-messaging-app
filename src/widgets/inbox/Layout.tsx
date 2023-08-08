@@ -27,11 +27,6 @@ export default function PermanentDrawerLeft() {
         position="fixed"
         sx={{ width: `calc(100% - ${drawerWidth}px)`, ml: `${drawerWidth}px` }}
       >
-        <Toolbar>
-          <Typography variant="h6" noWrap component="div">
-            Messaging App
-          </Typography>
-        </Toolbar>
       </AppBar>
       <Drawer
         sx={{
