@@ -12,6 +12,7 @@ type MachineContext = {
 
 type MachineState =
   | { value: "loading"; context: MachineContext }
+  | { value: "loading.get_session_data"; context: MachineContext }
   | { value: "loading.get_api_config"; context: MachineContext }
   | { value: "loading.verify_token"; context: MachineContext }
 
@@ -58,6 +59,26 @@ const refreshTokenAsync = (_: MachineContext) => new Promise(async (resolve, rej
   if (!response.ok) reject(false)
   const data = await response.json();
   resolve(data)
+})
+
+
+
+const loadSessionData = (_: MachineContext) => new Promise(async (resolve, reject) => {
+  const access_token = sessionStorage.getItem('access_token');
+  const refresh_token = sessionStorage.getItem('refresh_token');
+
+  if (null !== access_token && null !==refresh_token ){
+    resolve({
+      token: access_token,
+      refreshToken: refresh_token
+    })
+  }
+  else{
+    resolve({
+      token: undefined,
+      refreshToken: undefined
+    })
+  }
 })
 
 
@@ -158,9 +179,23 @@ export const authMachine = createMachine<
     loading: {
       entry: (_, e) => console.log("authmachine.loading entry"),
       exit: (_, e) => console.log("authmachine.loading exit"),
-      initial: "get_api_config",
+      initial: "get_session_data",
 
       states: {
+        get_session_data:{
+          entry: (_, e) => console.log("authmachine.loading.get_session_data entry"),
+          exit: (_, e) => console.log("authmachine.loading.get_session_data exit"),
+          invoke:{
+            src:loadSessionData,
+            onDone:{
+              actions:assign((_, e) => ({
+                token: e.data.token,
+                refreshToken: e.data.refreshToken
+              })),
+              target: "get_api_config"
+            }
+          },
+        },
         get_api_config: {
           invoke: {
             src: loadApiConfig,
@@ -226,7 +261,13 @@ export const authMachine = createMachine<
                 assign((_, e) => ({
                   token: e.data.access,
                   refreshToken: e.data.refresh
-                }))
+                })),
+
+                //using sessionStorage for page refresh survive
+                (_,e)=>{
+                  sessionStorage.setItem('access_token',e.data.access);
+                  sessionStorage.setItem('refresh_token',e.data.refresh);
+                }
 
               ],
               target: "#authenticated"
