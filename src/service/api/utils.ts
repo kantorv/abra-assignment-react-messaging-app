@@ -1,15 +1,5 @@
 
-type ApiConfig = {
-    apiServerUrl: string
-}
 
-type ApiEndpoints = {
-    root: string,
-    messages: string,
-    token: string,
-    tokenRefresh: string,
-
-}
 
 
 const setupApiEndpoints = (apiServerUrl:string)=>{
@@ -21,6 +11,7 @@ const setupApiEndpoints = (apiServerUrl:string)=>{
         messages:  `${apiRoot}/messages/`,
         token: `${authRoot}/token/`,
         tokenRefresh: `${authRoot}/token/refresh/`,
+        tokenVerify: `${authRoot}/token/verify/`,
     } as ApiEndpoints
 
     return ENDPOINTS
