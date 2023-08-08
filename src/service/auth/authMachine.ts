@@ -355,9 +355,6 @@ export const authMachine = createMachine<
           exit: (_, e) => console.log("authmachine.authenticated.idle exit", e),
           on: {
             'EVENTS.TOKEN.REFRESH': {
-              actions: [
-                (_, e) => console.log(e)
-              ],
               target: "token_refresh"
             }
           }
@@ -366,17 +363,27 @@ export const authMachine = createMachine<
           entry: (_, e) => console.log("authmachine.authenticated.token_refresh entry", e),
           exit: (_, e) => console.log("authmachine.authenticated.token_refresh exit", e),
           invoke: {
-            id: "token_refresh",
-            src: (_, e) => new Promise((resolve, reject) => {
-              resolve(true)
-            }),
+            src: (_, e) => refreshTokenAsync(_),
             onDone: {
+              actions: [
+                (_, e) => console.log("authmachine.authenticated.token_refresh.refreshTokenAsync onDone", e),
+                assign((_, e) => ({
+                  token: e.data.access
+                })),
+                (_,e)=>{
+                  sessionStorage.setItem('access_token',e.data.access);
+                }
+
+              ],
               target: "idle"
             },
             onError: {
+              actions: [
+                (_, e) => console.log("authmachine.authenticated.token_refresh.refreshTokenAsync onError", e),
+              ],
               target: "#anonimous"
             }
-          },
+          }
         }
       },
     }
