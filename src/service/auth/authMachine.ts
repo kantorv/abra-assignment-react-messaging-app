@@ -15,6 +15,7 @@ type MachineState =
   | { value: "loading.get_session_data"; context: MachineContext }
   | { value: "loading.get_api_config"; context: MachineContext }
   | { value: "loading.verify_token"; context: MachineContext }
+  | { value: "loading.refresh_token"; context: MachineContext }
 
   | { value: "anonimous"; context: MachineContext }
   | { value: "anonimous.idle"; context: MachineContext }
@@ -227,6 +228,30 @@ export const authMachine = createMachine<
             onError: {
               actions: [
                 (_, e) => console.log("apimachine.loading.verify_token.verifyTokenAsync onError", e),
+              ],
+              target: "refresh_token"
+            }
+          }
+        },
+        refresh_token: {
+          invoke: {
+            src: (_, e) => refreshTokenAsync(_),
+            onDone: {
+              actions: [
+                (_, e) => console.log("apimachine.loading.refresh_token.refreshTokenAsync onDone", e),
+                assign((_, e) => ({
+                  token: e.data.access
+                })),
+                (_,e)=>{
+                  sessionStorage.setItem('access_token',e.data.access);
+                }
+
+              ],
+              target: "#authenticated"
+            },
+            onError: {
+              actions: [
+                (_, e) => console.log("apimachine.loading.refresh_token.verifyTokenAsync onError", e),
               ],
               target: "#anonimous"
             }
