@@ -9,3 +9,16 @@ type ApiEndpoints = {
     tokenRefresh: string,
     tokenVerify: string,
 }
+
+
+
+
+type UserMessage = {
+    id: string,
+    sender: string,
+    receiver: string,
+    subject: string,
+    message: string,
+    created: string
+
+}
