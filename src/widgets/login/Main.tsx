@@ -12,6 +12,11 @@ import Grid from '@mui/material/Grid';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+
+import { useAuthContext } from '../../service/auth/useAuthContext';
+import { useActor } from '@xstate/react';
 
 function Copyright(props: any) {
   return (
@@ -26,17 +31,35 @@ function Copyright(props: any) {
   );
 }
 
+
+function LoginFailedAlert() {
+  return (
+    <Stack sx={{ width: '100%', mt:2 }} spacing={2}>
+      <Alert severity="error">Login failed. Please try again</Alert>
+    </Stack>
+  );
+}
+
 // TODO remove, this demo shouldn't need to reset the theme.
 const defaultTheme = createTheme();
 
 export default function SignInSide() {
+
+  const {authService} = useAuthContext()
+  const [state, send] = useActor(authService);
+
+
+
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      username: data.get('username'),
-      password: data.get('password'),
-    });
+
+    send({
+      type: 'EVENTS.USER.AUTHENTICATE',
+      username: data.get('username') as string,
+      password: data.get('password') as string,
+    })
+
   };
 
   return (
@@ -81,6 +104,7 @@ export default function SignInSide() {
                 id="username"
                 label="Username"
                 name="username"
+                autoComplete="username"
                 autoFocus
               />
               <TextField
@@ -102,6 +126,7 @@ export default function SignInSide() {
                 fullWidth
                 variant="contained"
                 sx={{ mt: 3, mb: 2 }}
+                disabled={state.matches('anonimous.login')}
               >
                 Sign In
               </Button>
@@ -117,6 +142,13 @@ export default function SignInSide() {
                   </Link>
                 </Grid>
               </Grid>
+
+            {state.matches('anonimous.error')?
+              <LoginFailedAlert />
+              :
+              null }
+             
+
               <Copyright sx={{ mt: 5 }} />
             </Box>
           </Box>
