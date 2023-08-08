@@ -33,12 +33,10 @@ type MachineEvent =
     username: string,
     password: string
   } | {
+    type: 'EVENTS.USER.LOGOUT'
+  } | {
     type: 'EVENTS.TOKEN.REFRESH',
-  } | {
-    type: 'EVENTS.APP.START',
-  } | {
-    type: 'EVENTS.API.CALL1',
-  } | {
+  }  | {
     type: 'EVENTS.TOKENREFRESH.SUCCESS',
   }
 
@@ -324,6 +322,20 @@ export const authMachine = createMachine<
     authenticated: {
       id: "authenticated",
       initial: "idle",
+      on:{
+        'EVENTS.USER.LOGOUT':{
+          actions:[
+            ()=>sessionStorage.clear(),
+            assign((_, e) => ({
+              token: undefined,
+              refreshToken: undefined
+            }))
+          ],
+          target:"anonimous"
+        }
+      },
+
+
       invoke: [
         {
           id: 'incInterval',
