@@ -1,5 +1,6 @@
-import { createMachine, assign, ActorRefFrom } from "xstate";
+import { createMachine, assign, ActorRefFrom, send, sendTo } from "xstate";
 import { loadApiConfig } from "../api/utils";
+import { apiMachine } from "../api/apimachine";
 
 type MachineContext = {
   token: string | undefined,
@@ -25,8 +26,6 @@ type MachineState =
   | { value: "authenticated"; context: MachineContext }
 
 
-
-
 type MachineEvent =
   | {
     type: 'EVENTS.USER.AUTHENTICATE',
@@ -36,9 +35,7 @@ type MachineEvent =
     type: 'EVENTS.USER.LOGOUT'
   } | {
     type: 'EVENTS.TOKEN.REFRESH',
-  }  | {
-    type: 'EVENTS.TOKENREFRESH.SUCCESS',
-  }
+  } 
 
 
 const refreshTokenAsync = (_: MachineContext) => new Promise(async (resolve, reject) => {
@@ -155,18 +152,8 @@ export const authMachine = createMachine<
   context: {
     token: undefined,
     refreshToken: undefined,
-    refreshTokenInterval: 60000 * 25, // refresh token expiration  - 30min
+    refreshTokenInterval: 60000,  // 60000 * 25, // refresh token expiration  - 30min
     apiEndpoints: {} as ApiEndpoints
-  },
-
-  on: {
-
-
-    'EVENTS.TOKENREFRESH.SUCCESS': {
-      actions: [
-        (_, e) => console.log(e)
-      ]
-    }
   },
 
   invoke: [
@@ -338,9 +325,20 @@ export const authMachine = createMachine<
 
       invoke: [
         {
+          id:"api",
+          src: "api",
+          data: (context, event) => ({
+              token: context.token,
+              endpoints: context.apiEndpoints,
+              received_messages:[],
+              sent_messages:[]
+          })
+
+        },
+        {
           id: 'incInterval',
           src: (context, event) => (callback, onReceive) => {
-            // This will send the 'INC' event to the parent every second
+            // This will send the 'EVENTS.TOKEN.REFRESH' every `refreshTokenInterval`
             const { refreshTokenInterval } = context
             const id = setInterval(() => callback('EVENTS.TOKEN.REFRESH'), refreshTokenInterval);
 
@@ -372,7 +370,11 @@ export const authMachine = createMachine<
                 })),
                 (_,e)=>{
                   sessionStorage.setItem('access_token',e.data.access);
-                }
+                },
+
+                sendTo("api",(_,e)=>({type: 'EVENTS.TOKEN.REFRESH', token: e.data.access}) )
+                //sendTo((ctx, event)=>"api",{type: 'EVENTS.API.LOAD.PRESETS'})
+              //  ()=>send({ type: 'PING' }, { to: 'pong' }),
 
               ],
               target: "idle"
@@ -392,8 +394,8 @@ export const authMachine = createMachine<
 
   }
 }, {
-  actions: {
-
+  services: {
+      api: apiMachine
   },
 });
 

@@ -1,3 +1,4 @@
+import { log } from "console";
 import { createMachine, assign, sendParent, send, ActorRefFrom, DoneInvokeEvent } from "xstate";
 
 type MachineContext = {
@@ -29,6 +30,9 @@ type MachineEvent =
   } | {
     type: 'EVENTS.API.DELETE_MESSAGE',
     id: string
+  } | {
+    type: 'EVENTS.TOKEN.REFRESH',
+    token: string
   }
 
 
@@ -211,20 +215,30 @@ export const apiMachine = createMachine<
       exit: (_, e) => console.log("apimachine.idle exit", e),
       on: {
         'EVENTS.API.LOAD_RECEIVED_MESSAGES': {
-          target: ".get_received"
+          target: "get_received"
         },
 
         'EVENTS.API.LOAD_SENT_MESSAGES': {
-          target: ".get_sent"
+          target: "get_sent"
         },
 
         'EVENTS.API.CREATE_MESSAGE': {
-          target: ".post_message"
+          target: "post_message"
         },
 
         'EVENTS.API.DELETE_MESSAGE': {
-          target: ".delete_message"
+          target: "delete_message"
         },
+
+
+        'EVENTS.TOKEN.REFRESH':{
+          actions:  [
+          //  (_,e)=>console.log('EVENTS.TOKEN.REFRESH received', e.token),
+            assign((_, e) => ({
+              token: e.token
+            }))
+          ],
+        }
       },
     },
 
@@ -247,6 +261,10 @@ export const apiMachine = createMachine<
         }
       }
 
+
+    },
+
+    get_sent:{
 
     },
 
