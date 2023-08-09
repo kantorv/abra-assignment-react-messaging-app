@@ -24,7 +24,8 @@ type MachineState =
   | { value: "anonimous.error"; context: MachineContext }
 
   | { value: "authenticated"; context: MachineContext }
-
+  | { value: "authenticated.idle"; context: MachineContext }
+  | { value: "authenticated.token_refresh"; context: MachineContext }
 
 type MachineEvent =
   | {
@@ -46,15 +47,25 @@ const refreshTokenAsync = (_: MachineContext) => new Promise(async (resolve, rej
     "refresh": refreshToken
   }
 
-  const response = await fetch(apiEndpoints.tokenRefresh, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(payload)
-  });
 
-  if (!response.ok) reject(false)
-  const data = await response.json();
-  resolve(data)
+  try{
+    const response = await fetch(apiEndpoints.tokenRefresh, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+  
+    if (!response.ok) reject(false)
+    else{
+      const data = await response.json();
+      resolve(data)
+    }
+ 
+  }
+  catch{
+    reject(false)
+  }
+
 })
 
 
@@ -125,18 +136,25 @@ const userLoginRequest = (_: MachineContext, e: MachineEvent) => new Promise(asy
     "password": password,
   }
 
-  const response = await fetch(apiEndpoints.token, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-
-  if (!response.ok) {
-    reject({ reason: "login_failed", data: data })
-    return
+  try{
+    const response = await fetch(apiEndpoints.token, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+  
+    if (!response.ok) {
+      reject({ reason: "login_failed", data: data })
+      return
+    }
+    resolve(data)
   }
-  resolve(data)
+  catch{
+    reject({ reason: "server_error" })
+  }
+
+
 })
 
 
@@ -152,7 +170,7 @@ export const authMachine = createMachine<
   context: {
     token: undefined,
     refreshToken: undefined,
-    refreshTokenInterval: 60000,  // 60000 * 25, // refresh token expiration  - 30min
+    refreshTokenInterval:  60000 * 25, // refresh token expiration  - 30min
     apiEndpoints: {} as ApiEndpoints
   },
 
