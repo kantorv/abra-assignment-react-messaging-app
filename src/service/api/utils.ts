@@ -9,6 +9,8 @@ const setupApiEndpoints = (apiServerUrl:string)=>{
     const ENDPOINTS = {
         root: apiRoot,
         messages:  `${apiRoot}/messages/`,
+        messagesReceived:  `${apiRoot}/messages/received/`,
+        messagesSent:  `${apiRoot}/messages/sent/`,
         token: `${authRoot}/token/`,
         tokenRefresh: `${authRoot}/token/refresh/`,
         tokenVerify: `${authRoot}/token/verify/`,

@@ -37,7 +37,7 @@ type MachineEvent =
 
 
 
-type NewMessage =   Omit<UserMessage, 'id' | 'created' | 'sender'>;
+
 
 
 //https://dmitripavlutin.com/javascript-fetch-async-await/
@@ -201,7 +201,7 @@ export const apiMachine = createMachine<
   initial: "idle",
   id: "apimachine",
   context: {
-    token: "" as string,
+    token: "",
     endpoints: {} as ApiEndpoints,
     received_messages:[],
     sent_messages:[]
