@@ -1,10 +1,11 @@
-import * as React from 'react';
+import   {useEffect} from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridColDef, GridValueGetterParams } from '@mui/x-data-grid';
 import type { GridRowParams,MuiEvent, GridCallbackDetails  } from '@mui/x-data-grid'; 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 
-
+import type { ApiMachineActorType } from '../../service/api/apimachine';
+import { useActor, useSelector } from '@xstate/react';
 const columns: GridColDef[] = [
   {
     field: 'from',
@@ -117,15 +118,28 @@ export default function DataGridDemo() {
   const navigate = useNavigate()
   const onRowClick = (params: GridRowParams, event: MuiEvent, details: GridCallbackDetails)=>{
     const {id} = params
-    console.log("row clicked", id)
     navigate(`/messages/${id}`)
   }
+
+
+  const {api_svc} = useOutletContext<{api_svc:ApiMachineActorType }>()
+
+  const received_messages = useSelector(api_svc, (state)=>state.context.received_messages)
+  
+  useEffect(()=>{
+    if(received_messages.length === 0){
+      api_svc.send('EVENTS.API.LOAD_RECEIVED_MESSAGES')
+    }
+  },[])
+
+
+
 
 
   return (
     <Box sx={{ height: '100%', width: '100%' }}>
       <DataGrid
-        rows={sampleMessages}
+        rows={received_messages}
         columns={columns}
         initialState={{
           pagination: {

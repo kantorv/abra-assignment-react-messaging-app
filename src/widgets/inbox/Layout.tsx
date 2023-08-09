@@ -21,6 +21,14 @@ import AppBar from './AppBar'
 import { Outlet } from 'react-router-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+
+import type { ApiMachineActorType } from '../../service/api/apimachine'
+import { useAuthContext } from '../../service/auth/useAuthContext';
+import { useSelector } from '@xstate/react';
+
+
+
+
 const drawerWidth = 240;
 
 export default function PermanentDrawerLeft() {
@@ -28,10 +36,15 @@ export default function PermanentDrawerLeft() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  React.useEffect(()=>{
+  const {authService} = useAuthContext()
 
-    console.log("location update", location)
-  },[location])
+  const api_svc = useSelector(authService, (state)=>state.children.api)
+
+  const name='Your name'
+  // React.useEffect(()=>{
+
+  //   console.log("location update", location)
+  // },[location])
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -120,7 +133,7 @@ export default function PermanentDrawerLeft() {
         sx={{ flexGrow: 1, bgcolor: 'background.default', p: 3 }}
       >
         <Toolbar />
-        <Outlet />
+        <Outlet  context={{api_svc}} />
       </Box>
     </Box>
   );

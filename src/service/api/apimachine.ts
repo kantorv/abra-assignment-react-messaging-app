@@ -163,7 +163,7 @@ const deleteMessageRequest = (_: MachineContext, id: string) => new Promise(asyn
 
 const getReceivedMessagesRequest = (_: MachineContext) => new Promise(async (resolve, reject) => {
   const { token, endpoints } = _
-  const url = `${endpoints.messages}`
+  const url = `${endpoints.messagesReceived}`
 
   try {
     const response  = await getApiRequest(token, url);
@@ -250,6 +250,9 @@ export const apiMachine = createMachine<
         onDone: {
           actions: [
             (_, e) => console.log("apimachine.get_received.getReceivedMessagesRequest onDone", e),
+            assign((_, e) => ({
+              received_messages: e.data.response
+            }))
           ],
           target: "idle"
         },
