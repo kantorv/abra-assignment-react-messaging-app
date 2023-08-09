@@ -19,13 +19,19 @@ import DraftsIcon from '@mui/icons-material/Drafts';
 
 import AppBar from './AppBar'
 import { Outlet } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const drawerWidth = 240;
 
 export default function PermanentDrawerLeft() {
 
   const location = useLocation()
+  const navigate = useNavigate()
+
+  React.useEffect(()=>{
+
+    console.log("location update", location)
+  },[location])
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -52,7 +58,10 @@ export default function PermanentDrawerLeft() {
         <List>
 
             <ListItem  disablePadding>
-              <ListItemButton selected={location.pathname.startsWith('/messages')?true:false}>
+              <ListItemButton 
+                  selected={location.pathname.startsWith('/messages') ||location.pathname==="/"?true:false}
+                  onClick={()=>navigate("/")}
+                  >
                 <ListItemIcon>
                   <MailIcon /> 
                 </ListItemIcon>
