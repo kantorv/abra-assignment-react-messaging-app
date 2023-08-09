@@ -137,7 +137,7 @@ export default function DataGridDemo() {
 
 
   return (
-    <Box sx={{ height: '100%', width: '100%' }}>
+    <Box sx={{   width: '100%' }}>
       <DataGrid
         rows={received_messages}
         columns={columns}

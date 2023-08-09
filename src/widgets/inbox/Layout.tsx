@@ -1,4 +1,4 @@
-import * as React from 'react';
+import { useState, useEffect}  from 'react';
 import Box from '@mui/material/Box';
 import Drawer from '@mui/material/Drawer';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -16,17 +16,18 @@ import MailIcon from '@mui/icons-material/Mail';
 import SendIcon from '@mui/icons-material/Send';
 import StarBorderIcon from '@mui/icons-material/StarBorder';
 import DraftsIcon from '@mui/icons-material/Drafts';
-
+import EditIcon from '@mui/icons-material/Edit';
 import AppBar from './AppBar'
+import ComposeMessageCard from './ComposeMessageCard'
 import { Outlet } from 'react-router-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 
-import type { ApiMachineActorType } from '../../service/api/apimachine'
 import { useAuthContext } from '../../service/auth/useAuthContext';
 import { useSelector } from '@xstate/react';
 
-
+import Fab from '@mui/material/Fab';
+import Paper from '@mui/material/Paper';
 
 
 const drawerWidth = 240;
@@ -40,11 +41,11 @@ export default function PermanentDrawerLeft() {
 
   const api_svc = useSelector(authService, (state)=>state.children.api)
 
-  const name='Your name'
-  // React.useEffect(()=>{
 
-  //   console.log("location update", location)
-  // },[location])
+
+  const [displayComposeCard, setDisplayComposeCard] = useState(false)
+
+
 
   return (
     <Box sx={{ display: 'flex' }}>
@@ -62,6 +63,7 @@ export default function PermanentDrawerLeft() {
             width: drawerWidth,
             boxSizing: 'border-box',
           },
+         
         }}
         variant="permanent"
         anchor="left"
@@ -127,6 +129,20 @@ export default function PermanentDrawerLeft() {
             </ListItem>
           ))}
         </List>
+          
+        <div style={{flexGrow: 1}}></div>
+        <Box
+          sx={{ 
+            display: "flex",
+            pb: 2,
+            justifyContent: "center"
+           }}
+          >
+          <Fab variant="extended" color="primary" aria-label="add" onClick={()=>setDisplayComposeCard(true)} disabled={displayComposeCard}>
+          <EditIcon sx={{ mr: 1 }} />
+          Compose
+        </Fab>
+        </Box>
       </Drawer>
       <Box
         component="main"
@@ -134,6 +150,21 @@ export default function PermanentDrawerLeft() {
       >
         <Toolbar />
         <Outlet  context={{api_svc}} />
+
+        {displayComposeCard?
+        <Box 
+          sx={{
+            position: "fixed",
+            bottom: 10,
+            right: 10
+          }}
+        >
+          <Paper elevation={5}>
+             <ComposeMessageCard closeFn={()=>setDisplayComposeCard(false)} />
+          </Paper>
+
+        </Box>:
+        null}
       </Box>
     </Box>
   );
