@@ -13,13 +13,20 @@ import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import InboxIcon from '@mui/icons-material/MoveToInbox';
 import MailIcon from '@mui/icons-material/Mail';
+import SendIcon from '@mui/icons-material/Send';
+import StarBorderIcon from '@mui/icons-material/StarBorder';
+import DraftsIcon from '@mui/icons-material/Drafts';
 
 import AppBar from './AppBar'
 import { Outlet } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
 
 export default function PermanentDrawerLeft() {
+
+  const location = useLocation()
+
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
@@ -43,22 +50,53 @@ export default function PermanentDrawerLeft() {
         <Toolbar />
         <Divider />
         <List>
-          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-            <ListItem key={text} disablePadding>
-              <ListItemButton>
+
+            <ListItem  disablePadding>
+              <ListItemButton selected={location.pathname.startsWith('/messages')?true:false}>
                 <ListItemIcon>
-                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                  <MailIcon /> 
                 </ListItemIcon>
-                <ListItemText primary={text} />
+                <ListItemText primary={"Inbox"} />
               </ListItemButton>
             </ListItem>
-          ))}
+
+            <ListItem  disablePadding>
+              <ListItemButton>
+                <ListItemIcon>
+                  <SendIcon /> 
+                </ListItemIcon>
+                <ListItemText primary={"Sent"} />
+              </ListItemButton>
+            </ListItem>
+
+
+            <ListItem  disablePadding>
+              <ListItemButton disabled>
+                <ListItemIcon>
+                  <StarBorderIcon /> 
+                </ListItemIcon>
+                <ListItemText primary={"Starred"} />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem  disablePadding>
+              <ListItemButton disabled>
+                <ListItemIcon>
+                  <DraftsIcon /> 
+                </ListItemIcon>
+                <ListItemText primary={"Drafts"} />
+              </ListItemButton>
+            </ListItem>
+
+
+
         </List>
         <Divider />
+
         <List>
           {['All mail', 'Trash', 'Spam'].map((text, index) => (
             <ListItem key={text} disablePadding>
-              <ListItemButton>
+              <ListItemButton disabled>
                 <ListItemIcon>
                   {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
                 </ListItemIcon>
