@@ -20,7 +20,7 @@ import ReplyIcon from '@mui/icons-material/Reply';
 
 import { Box } from '@mui/material';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { ApiMachineActorType } from '../../service/api/apimachine';
+import DeleteMessagesConfirmationDialog from './DeleteMessagesConfirmationDialog'
 import { useSelector } from '@xstate/react';
 import { useApiService } from '.';
 
@@ -40,7 +40,24 @@ export default function ReceivedMessageDetrails() {
     useEffect(() => {
 
         console.log("message updated", message)
+        if(undefined === message){
+            closeDeleteConfirmationDialogFn()
+            goBackFn()
+        }
+
     }, [message])
+
+
+    const [showDeleteConfirmationDialog, setShowDeleteConfirmationDialog] = useState(false)
+    const openDeleteConfirmationDialogFn = ()=>setShowDeleteConfirmationDialog(true)
+    const closeDeleteConfirmationDialogFn = ()=>setShowDeleteConfirmationDialog(false)
+    const confirmDeleteFn = ()=>apiService.send({
+      type: 'EVENTS.API.DELETE_RECIEVED_MESSAGES',
+      ids: [messageId as string]
+    })
+  
+
+    
 
     return (
 
@@ -72,10 +89,10 @@ export default function ReceivedMessageDetrails() {
                         }
                         action={
                             <Box>
-                                <IconButton aria-label="settings">
+                                <IconButton aria-label="reply" disabled>
                                     <ReplyIcon />
                                 </IconButton>
-                                <IconButton aria-label="share">
+                                <IconButton aria-label="delete" onClick={openDeleteConfirmationDialogFn}>
                                     <DeleteIcon fontSize='small' />
                                 </IconButton>
                             </Box>
@@ -94,13 +111,22 @@ export default function ReceivedMessageDetrails() {
                        </pre>
                     </Typography>
                 </CardContent>
-                   
+                     
                 </Card>
 
                 :
                  <Stack sx={{ width: '100%' }} spacing={2}>
                     <Alert severity="warning">Message not found</Alert>
                 </Stack>}
+
+            
+            <DeleteMessagesConfirmationDialog  
+                open={showDeleteConfirmationDialog}
+                closeFn={closeDeleteConfirmationDialogFn}
+                message={`Message will be deleted!`}
+                confirmFn={confirmDeleteFn}
+                
+            /> 
         </Box>
     );
 }
