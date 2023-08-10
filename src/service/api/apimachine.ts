@@ -156,7 +156,16 @@ const postMessageRequest = (_:MachineContext, message:NewMessage) =>new Promise(
 
   try{
     const response = await postApiRequest(token, endpoints.messages, payload);
-    resolve(response)
+
+    //TODO: add typing to success and error responses
+    if ("error" in (response as any) && (response as any).error === true){
+      reject(response)
+    }
+    else{
+      resolve(response)
+    }
+
+    
   }
   catch(e){
     console.log("postMessageRequest error" , e)
