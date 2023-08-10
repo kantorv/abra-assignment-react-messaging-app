@@ -10,6 +10,7 @@ type MachineContext = {
 
 
 type MachineState =
+  | { value: "preload_data"; context: MachineContext }
   | { value: "idle"; context: MachineContext }
   | { value: "get_received"; context: MachineContext }
   | { value: "get_sent"; context: MachineContext }
@@ -184,7 +185,7 @@ const getReceivedMessagesRequest = (_: MachineContext) => new Promise(async (res
 
 const getSentMessagesRequest = (_: MachineContext) => new Promise(async (resolve, reject) => {
   const { token, endpoints } = _
-  const url = `${endpoints.messages}`
+  const url = `${endpoints.messagesSent}`
 
   try {
     const response  = await getApiRequest(token, url);
@@ -227,6 +228,9 @@ const deleteSentMessagesRequest = (_: MachineContext, ids: string[]) => new Prom
 
 
 
+
+const preloadMessagesRequest = (_: MachineContext) =>Promise.all([getReceivedMessagesRequest(_), getSentMessagesRequest(_)])
+
  
 export const apiMachine = createMachine<
   MachineContext,
@@ -234,7 +238,7 @@ export const apiMachine = createMachine<
   MachineState
 >({
   predictableActionArguments: true,
-  initial: "idle",
+  initial: "preload_data",
   id: "apimachine",
   context: {
     token: "",
@@ -245,7 +249,31 @@ export const apiMachine = createMachine<
 
 
   states: {
+    preload_data:{
+      entry:    (_, e) => console.log("apimachine.preload_data entry"),
+      exit: (_, e) => console.log("apimachine.preload_data exit", e),
+      invoke: {
+        src: preloadMessagesRequest,
+        onDone: {
+          actions: [
+            (_, e) => console.log("apimachine.preload_data.preloadMessagesRequest onDone", e),
+            assign((_, e) => ({
+              received_messages: e.data[0].response,
+              sent_messages: e.data[1].response
+            }))
+          ],
+          target: "idle"
+        },
+        onError: {
+          actions: [
+            (_, e) => console.log("apimachine.preload_data.preloadMessagesRequest onError", e),
+          ],
+          target: "idle"
+        }
+      }
 
+
+    },
     idle: {
       id: "idle",
       entry:    (_, e) => console.log("apimachine.idle entry", { endpoints: _.endpoints }),

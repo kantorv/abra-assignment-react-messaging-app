@@ -58,11 +58,6 @@ export default function DataGridDemo() {
 
   const received_messages = useSelector(apiService, (state)=>state.context.received_messages)
   
-  useEffect(()=>{
-    if(received_messages.length === 0){
-      apiService.send('EVENTS.API.LOAD_RECEIVED_MESSAGES')
-    }
-  },[])
 
 
   useEffect(()=>{
