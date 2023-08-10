@@ -87,7 +87,10 @@ export default function PermanentDrawerLeft() {
           </ListItem>
 
           <ListItem disablePadding>
-            <ListItemButton>
+            <ListItemButton
+             selected={location.pathname.startsWith('/sent')}
+             onClick={() => navigate("/sent")}
+            >
               <ListItemIcon>
                 <SendIcon />
               </ListItemIcon>
