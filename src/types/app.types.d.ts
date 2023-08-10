@@ -23,4 +23,4 @@ type UserMessage = {
 
 }
 
-type NewMessage =   Omit<UserMessage, 'id' | 'created' | 'sender'>;
+type NewMessage =   Omit<UserMessage, 'id' | 'created' | 'from'>;

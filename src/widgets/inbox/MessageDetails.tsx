@@ -19,25 +19,23 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ReplyIcon from '@mui/icons-material/Reply';
 
 import { Box } from '@mui/material';
-import { useNavigate, useParams, useOutletContext } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import type { ApiMachineActorType } from '../../service/api/apimachine';
 import { useSelector } from '@xstate/react';
+import { useApiService } from '.';
 
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 
 
-export default function RecipeReviewCard() {
-    const [expanded, setExpanded] = useState(true);
+export default function ReceivedMessageDetrails() {
     const navigate = useNavigate()
     const goBackFn = () => navigate('/')
 
     const { messageId } = useParams()
+    const {apiService} = useApiService()
 
-
-
-    const { api_svc } = useOutletContext<{ api_svc: ApiMachineActorType }>()
-    const message = useSelector(api_svc, (state) => state.context.received_messages.find((x) => x.id === messageId))
+    const message = useSelector(apiService, (state) => state.context.received_messages.find((x) => x.id === messageId))
 
     useEffect(() => {
 
@@ -90,7 +88,7 @@ export default function RecipeReviewCard() {
 
                 <CardContent>
 
-                    <Typography paragraph>
+                    <Typography component={"div"}>
                         <pre style={{ whiteSpace:"pre-wrap"}}>
                        {message.message}
                        </pre>

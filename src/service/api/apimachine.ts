@@ -13,7 +13,13 @@ type MachineState =
   | { value: "idle"; context: MachineContext }
   | { value: "get_received"; context: MachineContext }
   | { value: "get_sent"; context: MachineContext }
+
   | { value: "post_message"; context: MachineContext }
+  | { value: "post_message.filling"; context: MachineContext }
+  | { value: "post_message.execute"; context: MachineContext }
+  | { value: "post_message.success"; context: MachineContext }
+  | { value: "post_message.error"; context: MachineContext }
+
   | { value: "delete_message"; context: MachineContext }
   | { value: "api_error"; context: MachineContext }
 
@@ -26,11 +32,16 @@ type MachineEvent =
     type: 'EVENTS.API.LOAD_SENT_MESSAGES',
   } | {
     type: 'EVENTS.API.CREATE_MESSAGE',
+  } | {
+    type: 'EVENTS.API.POST_MESSAGE',
     message: NewMessage
   } | {
     type: 'EVENTS.API.DELETE_MESSAGE',
     id: string
   } | {
+    type: 'EVENTS.UI.CLOSE_MESSAGE_EDITOR',
+    id: string
+  }| {
     type: 'EVENTS.TOKEN.REFRESH',
     token: string
   }
@@ -211,6 +222,7 @@ export const apiMachine = createMachine<
   states: {
 
     idle: {
+      id: "idle",
       entry:    (_, e) => console.log("apimachine.idle entry", { endpoints: _.endpoints }),
       exit: (_, e) => console.log("apimachine.idle exit", e),
       on: {
@@ -274,21 +286,50 @@ export const apiMachine = createMachine<
     post_message: {
       entry: (_, e) => console.log("apimachine.post_message entry", e),
       exit: (_, e) => console.log("apimachine.post_message exit", e),
-      invoke: {
-        src: (ctx, e) => (e.type === 'EVENTS.API.CREATE_MESSAGE' && postMessageRequest(ctx, e.message)) || new Promise((resolve, reject) => reject(null)),
-        onDone: {
-          actions: [
-            (_, e) => console.log("apimachine.post_message.postMessageRequest onDone", e),
-          ],
+      on:{
+        'EVENTS.UI.CLOSE_MESSAGE_EDITOR':{
           target: "idle"
-        },
-        onError: {
-          actions: [
-            (_, e) => console.log("apimachine.post_message.postMessageRequest onError", e),
-          ],
-          target: "api_error"
         }
-      }
+      },
+      initial:"filling",
+      states:{
+         filling:{
+            on:{
+              'EVENTS.API.POST_MESSAGE':{
+                target: "execute"
+              }
+            }
+         },
+         execute:{
+          invoke: {
+            src: (ctx, e) => (e.type === 'EVENTS.API.POST_MESSAGE' && postMessageRequest(ctx, e.message)) || new Promise((resolve, reject) => reject(e)),
+            onDone: {
+              actions: [
+                (_, e) => console.log("apimachine.post_message.postMessageRequest onDone", e),
+                assign((_, e) => ({
+                  sent_messages: [..._.sent_messages, e.data]
+                }))
+              ],
+              target: "success"
+            },
+            onError: {
+              actions: [
+                (_, e) => console.log("apimachine.post_message.postMessageRequest onError", e),
+              ],
+              target: "error"
+            }
+          }
+    
+
+         },
+         error:{
+          
+         },
+         success:{
+
+         }
+      },
+
 
 
     },

@@ -2,10 +2,10 @@ import   {useEffect} from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridColDef, GridValueGetterParams } from '@mui/x-data-grid';
 import type { GridRowParams,MuiEvent, GridCallbackDetails  } from '@mui/x-data-grid'; 
-import { useNavigate, useOutletContext } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
-import type { ApiMachineActorType } from '../../service/api/apimachine';
 import { useActor, useSelector } from '@xstate/react';
+import { useApiService } from '.';
 const columns: GridColDef[] = [
   {
     field: 'from',
@@ -37,82 +37,6 @@ const columns: GridColDef[] = [
 ];
 
 
-const sampleMessages:UserMessage[] = 
-[
-    {
-        "id": "5462da8b-0000-434d-8fe4-392d0294e19d",
-        "subject": "Test Subj",
-        "message": "Hello World",
-        "created": "2023-08-07T06:54:59.154834Z",
-        "from": "testuser",
-        "to": "admin"
-    },
-    {
-        "id": "4847a164-f96d-4444-96af-8bbfdda82e01",
-        "subject": "Test Subj234234234234",
-        "message": "Hello Worl234234d",
-        "created": "2023-08-07T06:50:15.157624Z",
-        "from": "testuser",
-        "to": "admin"
-    },
-    {
-        "id": "9d4b558f-e838-4e7c-aa13-b6d9f58e138f",
-        "subject": "New message",
-        "message": "zsedfsregsretgf",
-        "created": "2023-08-06T17:55:20.773327Z",
-        "from": "demo1",
-        "to": "admin"
-    },
-    {
-      "id": "5462da8b-2222-434d-8fe4-392d0294e19d",
-      "subject": "Test Subj",
-      "message": "Hello World",
-      "created": "2023-08-07T06:54:59.154834Z",
-      "from": "testuser",
-      "to": "admin"
-  },
-  {
-      "id": "4847a164-2222-4444-96af-8bbfdda82e01",
-      "subject": "Test Subj234234234234",
-      "message": "Hello Worl234234d",
-      "created": "2023-08-07T06:50:15.157624Z",
-      "from": "testuser",
-      "to": "admin"
-  },
-  {
-      "id": "9d4b558f-2222-4e7c-aa13-b6d9f58e138f",
-      "subject": "New message",
-      "message": "zsedfsregsretgf",
-      "created": "2023-08-06T17:55:20.773327Z",
-      "from": "demo1",
-      "to": "admin"
-  },
-  {
-    "id": "5462da8b-3333-434d-8fe4-392d0294e19d",
-    "subject": "Test Subj",
-    "message": "Hello World",
-    "created": "2023-08-07T06:54:59.154834Z",
-    "from": "testuser",
-    "to": "admin"
-},
-{
-    "id": "4847a164-3333-4444-96af-8bbfdda82e01",
-    "subject": "Test Subj234234234234",
-    "message": "Hello Worl234234d",
-    "created": "2023-08-07T06:50:15.157624Z",
-    "from": "testuser",
-    "to": "admin"
-},
-{
-    "id": "9d4b558f-3333-4e7c-aa13-b6d9f58e138f",
-    "subject": "New message",
-    "message": "zsedfsregsretgf",
-    "created": "2023-08-06T17:55:20.773327Z",
-    "from": "demo1",
-    "to": "admin"
-}
-]
-
 export default function DataGridDemo() {
 
   const navigate = useNavigate()
@@ -121,14 +45,13 @@ export default function DataGridDemo() {
     navigate(`/messages/${id}`)
   }
 
+  const {apiService} = useApiService()
 
-  const {api_svc} = useOutletContext<{api_svc:ApiMachineActorType }>()
-
-  const received_messages = useSelector(api_svc, (state)=>state.context.received_messages)
+  const received_messages = useSelector(apiService, (state)=>state.context.received_messages)
   
   useEffect(()=>{
     if(received_messages.length === 0){
-      api_svc.send('EVENTS.API.LOAD_RECEIVED_MESSAGES')
+      apiService.send('EVENTS.API.LOAD_RECEIVED_MESSAGES')
     }
   },[])
 
