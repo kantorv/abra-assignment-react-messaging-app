@@ -11,6 +11,9 @@ const setupApiEndpoints = (apiServerUrl:string)=>{
         messages:  `${apiRoot}/messages/`,
         messagesReceived:  `${apiRoot}/messages/received/`,
         messagesSent:  `${apiRoot}/messages/sent/`,
+        deleteRecieved: `${apiRoot}/messages/delete_recieved/`,
+        deleteSent: `${apiRoot}/messages/delete_sent/`,
+
         token: `${authRoot}/token/`,
         tokenRefresh: `${authRoot}/token/refresh/`,
         tokenVerify: `${authRoot}/token/verify/`,

@@ -13,14 +13,13 @@ type MachineState =
   | { value: "idle"; context: MachineContext }
   | { value: "get_received"; context: MachineContext }
   | { value: "get_sent"; context: MachineContext }
-
   | { value: "post_message"; context: MachineContext }
   | { value: "post_message.filling"; context: MachineContext }
   | { value: "post_message.execute"; context: MachineContext }
   | { value: "post_message.success"; context: MachineContext }
   | { value: "post_message.error"; context: MachineContext }
-
-  | { value: "delete_message"; context: MachineContext }
+  | { value: "delete_sent_messages"; context: MachineContext }
+  | { value: "delete_recieved_messages"; context: MachineContext }
   | { value: "api_error"; context: MachineContext }
 
 
@@ -36,8 +35,14 @@ type MachineEvent =
     type: 'EVENTS.API.POST_MESSAGE',
     message: NewMessage
   } | {
-    type: 'EVENTS.API.DELETE_MESSAGE',
+    type: 'EVENTS.API.DELETE_MESSAGE', //TODO: remove unused event
     id: string
+  } | {
+    type: 'EVENTS.API.DELETE_SENT_MESSAGES',
+    ids: string[]
+  } | {
+    type: 'EVENTS.API.DELETE_RECIEVED_MESSAGES',
+    ids: string[]
   } | {
     type: 'EVENTS.UI.CLOSE_MESSAGE_EDITOR',
     id: string
@@ -107,7 +112,7 @@ const postApiRequest = (token: string, endpoint: string, payload: object) => new
 
 })
 
-const deleteApiRequest = (token: string, endpoint: string) => new Promise(async (resolve, reject) => {
+const deleteApiRequest = (token: string, endpoint: string, payload: string[]) => new Promise(async (resolve, reject) => {
   const headers = new Headers();
   const bearer = `Bearer ${token}`;
   headers.append("Authorization", bearer);
@@ -116,7 +121,8 @@ const deleteApiRequest = (token: string, endpoint: string) => new Promise(async 
 
   const response = await fetch(endpoint, {
     method: "DELETE",
-    headers: headers
+    headers: headers,
+    body: JSON.stringify(payload)
   });
 
 
@@ -160,19 +166,6 @@ const postMessageRequest = (_:MachineContext, message:NewMessage) =>new Promise(
 })
 
 
-const deleteMessageRequest = (_: MachineContext, id: string) => new Promise(async (resolve, reject) => {
-  const { token, endpoints } = _
-  const url = `${endpoints.messages}${id}/`
-
-  try {
-    await deleteApiRequest(token, url);
-    resolve({ success: true, id: id })
-  }
-  catch (e) {
-    console.log("deleteMessageRequest error", e)
-    reject(e)
-  }
-})
 
 const getReceivedMessagesRequest = (_: MachineContext) => new Promise(async (resolve, reject) => {
   const { token, endpoints } = _
@@ -203,8 +196,38 @@ const getSentMessagesRequest = (_: MachineContext) => new Promise(async (resolve
   }
 })
 
-//}
 
+const deleteRecievedMessagesRequest = (_: MachineContext, ids: string[]) => new Promise(async (resolve, reject) => {
+  const { token, endpoints } = _
+  const url = `${endpoints.deleteRecieved}`
+
+  try {
+    await deleteApiRequest(token, url, ids);
+    resolve({ success: true, ids: ids })
+  }
+  catch (e) {
+    console.log("deleteRecievedMessagesRequest error", e)
+    reject(e)
+  }
+})
+
+const deleteSentMessagesRequest = (_: MachineContext, ids: string[]) => new Promise(async (resolve, reject) => {
+  const { token, endpoints } = _
+  const url = `${endpoints.deleteSent}`
+
+  try {
+    await deleteApiRequest(token, url, ids);
+    resolve({ success: true, ids: ids })
+  }
+  catch (e) {
+    console.log("deleteSentMessagesRequest error", e)
+    reject(e)
+  }
+})
+
+
+
+ 
 export const apiMachine = createMachine<
   MachineContext,
   MachineEvent,
@@ -240,10 +263,13 @@ export const apiMachine = createMachine<
           target: "post_message"
         },
 
-        'EVENTS.API.DELETE_MESSAGE': {
-          target: "delete_message"
+        'EVENTS.API.DELETE_RECIEVED_MESSAGES':{
+          target: "delete_recieved_messages"
         },
 
+        'EVENTS.API.DELETE_SENT_MESSAGES':{
+          target: "delete_sent_messages"
+        },
 
         'EVENTS.TOKEN.REFRESH':{
           actions:  [
@@ -345,25 +371,51 @@ export const apiMachine = createMachine<
     },
 
 
-    delete_message: {
-      entry: (_, e) => console.log("apimachine.delete_message entry", e),
-      exit: (_, e) => console.log("apimachine.delete_message exit", e),
+    delete_recieved_messages: {
+      entry: (_, e) => console.log("apimachine.delete_recieved_messages entry", e),
+      exit: (_, e) => console.log("apimachine.delete_recieved_messages exit", e),
       invoke: {
-        src: (ctx, e) => (e.type === 'EVENTS.API.DELETE_MESSAGE'  && deleteMessageRequest(ctx, e.id)) || new Promise((resolve, reject) => reject(null)),
+        src: (ctx, e) => (e.type === 'EVENTS.API.DELETE_RECIEVED_MESSAGES'  && deleteRecievedMessagesRequest(ctx, e.ids)) || new Promise((resolve, reject) => reject(null)),
         onDone: {
           actions: [
-            (_, e) => console.log("apimachine.delete_message.deleteMessageRequest onDone", e),
+            (_, e) => console.log("apimachine.delete_message.deleteRecievedMessagesRequest onDone", e),
+            assign((_, e) => ({
+              received_messages:_.received_messages.filter(x=>!e.data.ids.includes(x.id))
+            }))
           ],
           target: "idle"
         },
         onError: {
           actions: [
-            (_, e) => console.log("apimachine.delete_message.deleteMessageRequest onError", e)
+            (_, e) => console.log("apimachine.delete_message.deleteRecievedMessagesRequest onError", e)
           ],
           target: "api_error"
         }
       }
+    },
 
+
+    delete_sent_messages:{
+      entry: (_, e) => console.log("apimachine.delete_sent_messages entry", e),
+      exit: (_, e) => console.log("apimachine.delete_sent_messages exit", e),
+      invoke: {
+        src: (ctx, e) => (e.type === 'EVENTS.API.DELETE_SENT_MESSAGES'  && deleteSentMessagesRequest(ctx, e.ids)) || new Promise((resolve, reject) => reject(null)),
+        onDone: {
+          actions: [
+            (_, e) => console.log("apimachine.delete_message.deleteSentMessagesRequest onDone", e),
+            assign((_, e) => ({
+              sent_messages:_.sent_messages.filter(x=>!e.data.ids.includes(x.id))
+            }))
+          ],
+          target: "idle"
+        },
+        onError: {
+          actions: [
+            (_, e) => console.log("apimachine.delete_message.deleteSentMessagesRequest onError", e)
+          ],
+          target: "api_error"
+        }
+      }
 
     },
 

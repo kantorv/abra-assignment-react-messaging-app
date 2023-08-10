@@ -7,9 +7,12 @@ type ApiEndpoints = {
     messages: string,
     messagesReceived: string,
     messagesSent: string,
+    deleteSent: string,
+    deleteRecieved: string,
     token: string,
     tokenRefresh: string,
     tokenVerify: string,
+
 }
 
 
