@@ -48,7 +48,7 @@ export default function SentMessagesDataGrid() {
   const navigate = useNavigate()
   const onRowClick = (params: GridRowParams, event: MuiEvent, details: GridCallbackDetails)=>{
     const {id} = params
-    navigate(`/messages/sent/${id}`)
+    navigate(`/sent/${id}`)
   }
 
   const [rowSelectionModel, setRowSelectionModel] = useState<GridRowSelectionModel>([]);
@@ -98,7 +98,7 @@ export default function SentMessagesDataGrid() {
 
         }}
       >
-        <Typography paragraph>Inbox</Typography>
+        <Typography paragraph>Sent messages</Typography>
         <div style={{ flexGrow:1 }}></div>
         {
           rowSelectionModel.length > 0?
