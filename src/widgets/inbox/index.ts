@@ -1,6 +1,7 @@
 import InboxLayout, {useApiService} from './Layout'
-import MessagingListReceived from './MessagesListReceived'
-import MessageDetails from './MessageDetails'
+import ReceivedMessagesList from './MessagesListReceived'
+import ReceivedMessageDetails from './ReceivedMessageDetails'
 import SentMessagesList from './MessagesListSent'
+import SentMessageDetails from './SentMessageDetails'
 
-export { InboxLayout, MessagingListReceived,SentMessagesList,  MessageDetails, useApiService }
+export { InboxLayout, ReceivedMessagesList,SentMessagesList,  ReceivedMessageDetails,SentMessageDetails, useApiService }

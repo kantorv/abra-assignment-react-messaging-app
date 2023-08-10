@@ -7,7 +7,7 @@ import {  createBrowserRouter, RouterProvider } from "react-router-dom";
 import { useActor } from '@xstate/react';
 import SignInSide from './widgets/login/Main'
 import { NoMatch } from './pages/NoMatch'
-import  { InboxLayout, MessagingListReceived, MessageDetails, SentMessagesList } from './widgets/inbox'
+import  { InboxLayout, ReceivedMessagesList, ReceivedMessageDetails, SentMessagesList, SentMessageDetails } from './widgets/inbox'
 
 
 const anonimous_routes = createBrowserRouter([
@@ -24,8 +24,9 @@ const authentificated_routes = createBrowserRouter([
     path: "/",
     element: <InboxLayout />,
     children: [
-      { index: true, element: <MessagingListReceived /> },
-      { path: "/messages/:messageId", element: <MessageDetails /> },
+      { index: true, element: <ReceivedMessagesList /> },
+      { path: "/messages/:messageId", element: <ReceivedMessageDetails /> },
+      { path: "/sent/:messageId", element: <SentMessageDetails /> },
       { path: "sent", element: <SentMessagesList /> },
       { path: "*", element: <NoMatch /> },
     ],
