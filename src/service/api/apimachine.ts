@@ -41,7 +41,9 @@ type MachineEvent =
   } | {
     type: 'EVENTS.UI.CLOSE_MESSAGE_EDITOR',
     id: string
-  }| {
+  } | {
+    type: 'EVENTS.UI.CLOSE_ERROR_DIALOG',
+  } | {
     type: 'EVENTS.TOKEN.REFRESH',
     token: string
   }
@@ -302,6 +304,8 @@ export const apiMachine = createMachine<
          },
          execute:{
           invoke: {
+
+            id:"post_message_exec",
             src: (ctx, e) => (e.type === 'EVENTS.API.POST_MESSAGE' && postMessageRequest(ctx, e.message)) || new Promise((resolve, reject) => reject(e)),
             onDone: {
               actions: [
@@ -323,7 +327,13 @@ export const apiMachine = createMachine<
 
          },
          error:{
-          
+          on:{
+            'EVENTS.UI.CLOSE_ERROR_DIALOG': {
+              target: "filling"
+            }
+          },
+          entry: (_, e) => console.log("apimachine.post_message.error entry", e),
+          exit: (_, e) => console.log("apimachine.post_message.error exit", e),
          },
          success:{
 

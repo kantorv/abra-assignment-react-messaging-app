@@ -17,6 +17,8 @@ import { Box } from '@mui/material';
 import type { ApiMachineActorType } from '../../service/api/apimachine';
 import { useActor } from '@xstate/react';
 
+import ErrorMesageDialog from './ErrorMesageDialog'
+
 
 const Alert = forwardRef<HTMLDivElement, AlertProps>(function Alert(
     props,
@@ -76,7 +78,17 @@ const ComposeMessageCard = (props: ComposeMessageCardProps) => {
 
   useEffect(()=>{
     setsSnackbarOpen(state.matches('post_message.success'))
+
+    if(state.matches('post_message.error')){
+        setErrorMessage((state.event as any).data.message)
+        //setErrorMessage(state.event.data.message)
+    }
   },[state])
+
+
+
+  const [errorMessage, setErrorMessage] = useState<string>("")
+
 
     return (
 
@@ -166,6 +178,12 @@ const ComposeMessageCard = (props: ComposeMessageCardProps) => {
             </CardActions>
             </Box>
 
+        <ErrorMesageDialog  
+            open={state.matches('post_message.error')}
+            closeFn={()=>send('EVENTS.UI.CLOSE_ERROR_DIALOG')}
+            message={errorMessage}
+            
+        />
 
         </Card>:
         <Snackbar 
@@ -176,7 +194,7 @@ const ComposeMessageCard = (props: ComposeMessageCardProps) => {
             anchorOrigin={{ vertical: 'bottom', horizontal: 'right'  }}
             >
             <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
-            This is a success message!
+            Message sent
             </Alert>
         </Snackbar>
     );
