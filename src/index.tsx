@@ -7,13 +7,13 @@ import reportWebVitals from './reportWebVitals';
 
 
 
-import { inspect } from '@xstate/inspect';
+// import { inspect } from '@xstate/inspect';
  
-inspect({
-  // options
-  // url: 'https://stately.ai/viz?inspect', // (default)
-  iframe: false, // open in new window
-});
+// inspect({
+//   // options
+//   // url: 'https://stately.ai/viz?inspect', // (default)
+//   iframe: false, // open in new window
+// });
 
 
 const root = ReactDOM.createRoot(

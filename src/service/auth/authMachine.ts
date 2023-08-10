@@ -1,5 +1,6 @@
-import { createMachine, assign, ActorRefFrom } from "xstate";
+import { createMachine, assign, ActorRefFrom, send, sendTo } from "xstate";
 import { loadApiConfig } from "../api/utils";
+import { apiMachine } from "../api/apimachine";
 
 type MachineContext = {
   token: string | undefined,
@@ -23,9 +24,8 @@ type MachineState =
   | { value: "anonimous.error"; context: MachineContext }
 
   | { value: "authenticated"; context: MachineContext }
-
-
-
+  | { value: "authenticated.idle"; context: MachineContext }
+  | { value: "authenticated.token_refresh"; context: MachineContext }
 
 type MachineEvent =
   | {
@@ -36,9 +36,7 @@ type MachineEvent =
     type: 'EVENTS.USER.LOGOUT'
   } | {
     type: 'EVENTS.TOKEN.REFRESH',
-  }  | {
-    type: 'EVENTS.TOKENREFRESH.SUCCESS',
-  }
+  } 
 
 
 const refreshTokenAsync = (_: MachineContext) => new Promise(async (resolve, reject) => {
@@ -49,15 +47,25 @@ const refreshTokenAsync = (_: MachineContext) => new Promise(async (resolve, rej
     "refresh": refreshToken
   }
 
-  const response = await fetch(apiEndpoints.tokenRefresh, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(payload)
-  });
 
-  if (!response.ok) reject(false)
-  const data = await response.json();
-  resolve(data)
+  try{
+    const response = await fetch(apiEndpoints.tokenRefresh, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+  
+    if (!response.ok) reject(false)
+    else{
+      const data = await response.json();
+      resolve(data)
+    }
+ 
+  }
+  catch{
+    reject(false)
+  }
+
 })
 
 
@@ -128,18 +136,25 @@ const userLoginRequest = (_: MachineContext, e: MachineEvent) => new Promise(asy
     "password": password,
   }
 
-  const response = await fetch(apiEndpoints.token, {
-    method: "POST",
-    headers: headers,
-    body: JSON.stringify(payload)
-  });
-  const data = await response.json();
-
-  if (!response.ok) {
-    reject({ reason: "login_failed", data: data })
-    return
+  try{
+    const response = await fetch(apiEndpoints.token, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json();
+  
+    if (!response.ok) {
+      reject({ reason: "login_failed", data: data })
+      return
+    }
+    resolve(data)
   }
-  resolve(data)
+  catch{
+    reject({ reason: "server_error" })
+  }
+
+
 })
 
 
@@ -155,18 +170,8 @@ export const authMachine = createMachine<
   context: {
     token: undefined,
     refreshToken: undefined,
-    refreshTokenInterval: 60000 * 25, // refresh token expiration  - 30min
+    refreshTokenInterval:  60000 * 25, // refresh token expiration  - 30min
     apiEndpoints: {} as ApiEndpoints
-  },
-
-  on: {
-
-
-    'EVENTS.TOKENREFRESH.SUCCESS': {
-      actions: [
-        (_, e) => console.log(e)
-      ]
-    }
   },
 
   invoke: [
@@ -338,9 +343,20 @@ export const authMachine = createMachine<
 
       invoke: [
         {
+          id:"api",
+          src: "api",
+          data: (context, event) => ({
+              token: context.token,
+              endpoints: context.apiEndpoints,
+              received_messages:[],
+              sent_messages:[]
+          })
+
+        },
+        {
           id: 'incInterval',
           src: (context, event) => (callback, onReceive) => {
-            // This will send the 'INC' event to the parent every second
+            // This will send the 'EVENTS.TOKEN.REFRESH' every `refreshTokenInterval`
             const { refreshTokenInterval } = context
             const id = setInterval(() => callback('EVENTS.TOKEN.REFRESH'), refreshTokenInterval);
 
@@ -355,9 +371,6 @@ export const authMachine = createMachine<
           exit: (_, e) => console.log("authmachine.authenticated.idle exit", e),
           on: {
             'EVENTS.TOKEN.REFRESH': {
-              actions: [
-                (_, e) => console.log(e)
-              ],
               target: "token_refresh"
             }
           }
@@ -366,17 +379,31 @@ export const authMachine = createMachine<
           entry: (_, e) => console.log("authmachine.authenticated.token_refresh entry", e),
           exit: (_, e) => console.log("authmachine.authenticated.token_refresh exit", e),
           invoke: {
-            id: "token_refresh",
-            src: (_, e) => new Promise((resolve, reject) => {
-              resolve(true)
-            }),
+            src: (_, e) => refreshTokenAsync(_),
             onDone: {
+              actions: [
+                (_, e) => console.log("authmachine.authenticated.token_refresh.refreshTokenAsync onDone", e),
+                assign((_, e) => ({
+                  token: e.data.access
+                })),
+                (_,e)=>{
+                  sessionStorage.setItem('access_token',e.data.access);
+                },
+
+                sendTo("api",(_,e)=>({type: 'EVENTS.TOKEN.REFRESH', token: e.data.access}) )
+                //sendTo((ctx, event)=>"api",{type: 'EVENTS.API.LOAD.PRESETS'})
+              //  ()=>send({ type: 'PING' }, { to: 'pong' }),
+
+              ],
               target: "idle"
             },
             onError: {
+              actions: [
+                (_, e) => console.log("authmachine.authenticated.token_refresh.refreshTokenAsync onError", e),
+              ],
               target: "#anonimous"
             }
-          },
+          }
         }
       },
     }
@@ -385,8 +412,8 @@ export const authMachine = createMachine<
 
   }
 }, {
-  actions: {
-
+  services: {
+      api: apiMachine
   },
 });
 
